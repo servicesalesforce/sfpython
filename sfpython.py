@@ -10,7 +10,7 @@ import requests
 
 def main():
     # manipulate the session instance (optional)
-    sf = Salesforce(username='sampath-2cdm@force.com', password='Oct@2019', security_token='uu9oMKpNGlwfGVOb6OFd4tIjd')
+    sf = Salesforce(username='sf username', password='sf password', security_token='security token')
     sessionId = sf.session_id
     instance = sf.sf_instance
     print ('sessionId: ' + sessionId)
