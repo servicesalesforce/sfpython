@@ -5,12 +5,12 @@ import os.path
 from PyPDF2 import PdfFileReader
 from simple_salesforce import Salesforce, SFType, SalesforceLogin
 import requests
-
+import glob 
 
 
 def main():
     # manipulate the session instance (optional)
-    sf = Salesforce(username='sf username', password='sf password', security_token='security token')
+    sf = Salesforce(username='sampath-2cdm@force.com', password='Oct@2019', security_token='uu9oMKpNGlwfGVOb6OFd4tIjd')
     sessionId = sf.session_id
     instance = sf.sf_instance
     print ('sessionId: ' + sessionId)
@@ -19,31 +19,78 @@ def main():
     for r in sfkeyword["records"]:
         searchkewwords.append(r["Keyword__c"])
     print(searchkewwords)
+    searchkewwordslen = len(searchkewwords)
+    print (searchkewwordslen)
     
     # query_string = "SELECT CreatedDate,ContentDocumentId,ContentLocation,FileExtension,FileType,Id,Title,VersionData FROM ContentVersion where ContentDocumentId='069B0000006rXmQIAU'"
     query_string = "SELECT CreatedDate,ContentDocumentId,ContentLocation,FileExtension,FileType,Id,Title,VersionData FROM ContentVersion where FileExtension='pdf'"
     output_directory ="069B0000006rXmQIAU"
-    fetch_files(sf,query_string,output_directory)
+    # fetch_files(sf,query_string,output_directory)
     
     # Creating a pdf file object.
-    print("\x1b[1;32m" + "Reading the PDF File" + "\x1b[0m")
-    pdf = open("BAC.pdf", "rb")
-    # Creating pdf reader object.
-    pdf_reader = PyPDF2.PdfFileReader(pdf)
-    # Checking total number of pages in a pdf file.
-    print("Total number of Pages:", pdf_reader.numPages)
-    pgno = pdf_reader.numPages
-    # Creating a page object.
-    for x in range(pgno):
-        print('Page '+str(x)+' Content')
-        page = pdf_reader.getPage(x-1)
-        # Extract data from a specific page number.
-        print(page.extractText())
+    print("\x1b[1;32m" + "Reading the PDF File" + "\x1b[0m") 
+    basepath = output_directory
+    insertjsondata = {};
+    insertdata = [];
+    for entry in os.listdir(basepath):
+        try:
+            if os.path.isfile(os.path.join(basepath, entry)):
+                print('%%%%'+entry)
+                name, ext = os.path.splitext(entry)
+                if ext =='.pdf':
+                    print('###'+entry)
+                    pdf = open(entry, "rb")
+                    # Creating pdf reader object.
+                    pdf_reader = PyPDF2.PdfFileReader(pdf)
+                    # Checking total number of pages in a pdf file.
+                    print("Total number of Pages:", pdf_reader.numPages)
+                    pgno = pdf_reader.numPages
+                    # Creating a page object.
+                    for x in range(pgno):
+                        print('Page '+str(x)+' Content')
+                        page = pdf_reader.getPage(x)
+                        # Extract data from a specific page number.
+                        # if x==0:
+                        text = page.extractText().encode('utf-8')
+                        search_text = " ".join(text.replace("\xa0", " ").strip().split())     
+                        search_line = search_text.split(".")
+                        # Iterate each Key Word
+                        for search_term in searchkewwords:
+                            # print(search_term)
+                            # Search on each line
+                            for word in search_line:
+                                if search_term in word.decode("utf-8"):
+                                    # print (search_term)
+                                    # print (word) 
+                                    insertjsondata['Question__c']= search_term
+                                    insertjsondata['Answer__c']= word
+                                    json_data = json.dumps(insertjsondata)
+                                    insertdata.append(json_data)  
 
-    # Closing the object.
-    pdf.close()
+                    # Closing the object.
+                    pdf.close()
+                    # print(insertdata)
+        except:
+            print("An exception occurred")
+    
+    # print(insertdata)
+    insertdatalen = len(insertdata)
+    print (insertdatalen)
+    # data = [
+    #   {"LastName":"\'%#!/)\'0\'!11con1","Email":"example@example.com"},
+    #   {"LastName":"\'%#!/)\'0\'!112$&!#$*3 \Con2","Email":"test@test.com"}
+    # ]
+    # sf.bulk.contact.insert(data)
 
+    formatinsertdata=(",".join(insertdata))
+    finalsinsertdata = "["+formatinsertdata+"]"
+    print(finalsinsertdata)
+    sf.bulk.Question_Answer__c.insert(json.loads(finalsinsertdata))
+    # data = [{"Question__c": "Outcomes", "Answer__c": "'%#!/)'0'!112$&!#$*3 'OUTCOMES Key Outcomes Progress Indicators In order to monitor progress, we will be gathering information by keeping records of attendance and participation to all ADF pro jects and events"}]
+    # sf.bulk.Question_Answer__c.insert(data)
 
+    
+  
 
 
 def fetch_files(sf,query_string, output_directory):
