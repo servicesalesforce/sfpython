@@ -21,11 +21,37 @@ def main():
     print(searchkewwords)
     searchkewwordslen = len(searchkewwords)
     print (searchkewwordslen)
+
     
-    # query_string = "SELECT CreatedDate,ContentDocumentId,ContentLocation,FileExtension,FileType,Id,Title,VersionData FROM ContentVersion where ContentDocumentId='069B0000006rXmQIAU'"
-    query_string = "SELECT CreatedDate,ContentDocumentId,ContentLocation,FileExtension,FileType,Id,Title,VersionData FROM ContentVersion where FileExtension='pdf'"
-    output_directory ="069B0000006rXmQIAU"
-    # fetch_files(sf,query_string,output_directory)
+    ParentRecordId = "001B000001AY9BJIA1"
+    condocsids=[];
+    print(ParentRecordId)
+
+    # SELECT ContentDocumentId,Id,LinkedEntityId,ShareType,Visibility FROM ContentDocumentLink WHERE LinkedEntityId = '001B000001AY9BJIA1'
+    condoc_query_string = "SELECT ContentDocumentId,Id,LinkedEntityId,ShareType,Visibility FROM ContentDocumentLink WHERE LinkedEntityId="+"'"+ParentRecordId+"'"
+    sfcondocs = sf.query(condoc_query_string)
+    for r in sfcondocs["records"]:
+        condocsids.append(r["ContentDocumentId"])
+    
+    # convery the list into SOQL Query format
+    listidstr=""
+    for s in condocsids: 
+        if listidstr=="": 
+            listidstr += "("+"'"+s+"'"+"," 
+        else:
+             listidstr += "'"+s+"'"+"," 
+    
+    finallistidstr = listidstr[:-1]
+    finalcondocsids = finallistidstr+")"
+    print(finalcondocsids)
+
+    # query_string = "SELECT CreatedDate,ContentDocumentId,ContentLocation,FileExtension,FileType,Id,Title,VersionData FROM ContentVersion where FileExtension='pdf' and ContentDocumentId IN ('069B0000006wEFoIAM','069B0000006wEFtIAM','069B0000006wEFyIAM')"
+    # query_string = "SELECT CreatedDate,ContentDocumentId,ContentLocation,FileExtension,FileType,Id,Title,VersionData FROM ContentVersion where FileExtension='pdf'"
+    query_string = "SELECT CreatedDate,ContentDocumentId,ContentLocation,FileExtension,FileType,Id,Title,VersionData FROM ContentVersion where FileExtension='pdf' and ContentDocumentId IN "+finalcondocsids
+    print('Query'+query_string)
+    sfcondocsnew = sf.query(query_string)
+    output_directory =ParentRecordId
+    fetch_files(sf,query_string,output_directory)
     
     # Creating a pdf file object.
     print("\x1b[1;32m" + "Reading the PDF File" + "\x1b[0m") 
@@ -85,12 +111,28 @@ def main():
     formatinsertdata=(",".join(insertdata))
     finalsinsertdata = "["+formatinsertdata+"]"
     print(finalsinsertdata)
-    sf.bulk.Question_Answer__c.insert(json.loads(finalsinsertdata))
+    if insertdatalen > 0:
+        sf.bulk.Question_Answer__c.insert(json.loads(finalsinsertdata))
     # data = [{"Question__c": "Outcomes", "Answer__c": "'%#!/)'0'!112$&!#$*3 'OUTCOMES Key Outcomes Progress Indicators In order to monitor progress, we will be gathering information by keeping records of attendance and participation to all ADF pro jects and events"}]
     # sf.bulk.Question_Answer__c.insert(data)
 
+
+    # Remove the Files & Folder
+    filelist = [ f for f in os.listdir(output_directory)]
+    for f in filelist:
+        # print(f)
+        os.remove(os.path.join(output_directory, f))
+    os.rmdir(output_directory)
+    print('####Removed the directory and files')
+
+
+
+
+
+
     
-  
+def fetch_documentids(sf,query_string):
+    condocs  = sf.query(query_string)
 
 
 def fetch_files(sf,query_string, output_directory):
