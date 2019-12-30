@@ -97,7 +97,7 @@ def main():
                     pdf.close()
                     # print(insertdata)
         except:
-            print("An exception occurred")
+            print("An exception occurred while reading the PDF")
     
     # print(insertdata)
     insertdatalen = len(insertdata)
@@ -115,15 +115,16 @@ def main():
         sf.bulk.Question_Answer__c.insert(json.loads(finalsinsertdata))
     # data = [{"Question__c": "Outcomes", "Answer__c": "'%#!/)'0'!112$&!#$*3 'OUTCOMES Key Outcomes Progress Indicators In order to monitor progress, we will be gathering information by keeping records of attendance and participation to all ADF pro jects and events"}]
     # sf.bulk.Question_Answer__c.insert(data)
+    # deletefilesandfolder(output_directory)
+    
 
-
-    # Remove the Files & Folder
-    filelist = [ f for f in os.listdir(output_directory)]
-    for f in filelist:
-        # print(f)
-        os.remove(os.path.join(output_directory, f))
-    os.rmdir(output_directory)
-    print('####Removed the directory and files')
+    # # Remove the Files & Folder
+    # filelist = [ f for f in os.listdir(output_directory)]
+    # for f in filelist:
+    #     # print(f)
+    #     os.remove(os.path.join(output_directory, f))
+    # os.rmdir(output_directory)
+    # print('####Removed the directory and files')
 
 
 
@@ -131,8 +132,13 @@ def main():
 
 
     
-def fetch_documentids(sf,query_string):
-    condocs  = sf.query(query_string)
+def deletefilesandfolder(output_directory):
+    filelist = [ f for f in os.listdir(output_directory)]
+    for f in filelist:
+        # print(f)
+        os.remove(os.path.join(output_directory, f))
+    os.rmdir(output_directory)
+    print('####Removed the directory and files')
 
 
 def fetch_files(sf,query_string, output_directory):
@@ -146,7 +152,9 @@ def fetch_files(sf,query_string, output_directory):
         print('****')
         for r in attachment["records"]:
             content_document_id = r["ContentDocumentId"]
-            title = r["Title"]
+            # title = r["Title"]+"."+r["FileExtension"]
+            # title = ''.join(e for e in r["Title"] if e.isalnum())+"."+r["FileExtension"]
+            title = ''.join(e for e in r["Title"] if e.isalnum())+".pdf"
             filename = "%s/%s" % (output_directory, title)
             url = "https://%s%s" % (sf.sf_instance, r["VersionData"])
             created_date = r["CreatedDate"]
@@ -179,4 +187,4 @@ def fetch_files(sf,query_string, output_directory):
 
 
 if __name__ == "__main__":
-    main()
+    main()  
