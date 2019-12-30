@@ -61,11 +61,12 @@ def main():
     for entry in os.listdir(basepath):
         try:
             if os.path.isfile(os.path.join(basepath, entry)):
+                print('&&&&'+basepath)
                 print('%%%%'+entry)
                 name, ext = os.path.splitext(entry)
                 if ext =='.pdf':
                     print('###'+entry)
-                    pdf = open(entry, "rb")
+                    pdf = open(basepath+"/"+entry, "rb")
                     # Creating pdf reader object.
                     pdf_reader = PyPDF2.PdfFileReader(pdf)
                     # Checking total number of pages in a pdf file.
